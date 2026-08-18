@@ -2,6 +2,19 @@ const AUTH_SERVICE_URL = import.meta.env.VITE_AUTH_SERVICE_URL
 const JOB_SERVICE_URL = import.meta.env.VITE_JOB_SERVICE_URL
 const APPLICATION_SERVICE_URL = import.meta.env.VITE_APPLICATION_SERVICE_URL
 
+/**
+ * Free-tier ngrok tunnels serve an HTML "you're about to visit an ngrok
+ * site" interstitial (ERR_NGROK_6024) to any request that looks like a
+ * plain browser navigation, instead of proxying through to the upstream
+ * server — that response has no CORS headers at all, which is what a
+ * cross-origin fetch actually surfaces as ("No 'Access-Control-Allow-Origin'
+ * header present"), not a real CORS misconfiguration. This header tells
+ * ngrok to skip the interstitial and proxy straight through. Harmless to
+ * send even when the backend isn't behind ngrok (e.g. plain localhost) —
+ * the services here just ignore unrecognized headers.
+ */
+const NGROK_SKIP_HEADER = { 'ngrok-skip-browser-warning': 'true' }
+
 export class ApiError extends Error {
   status: number
 
@@ -42,6 +55,7 @@ function refreshAccessToken(): Promise<boolean> {
     refreshPromise = fetch(`${AUTH_SERVICE_URL}/api/v1/organizations/refresh`, {
       method: 'POST',
       credentials: 'include',
+      headers: NGROK_SKIP_HEADER,
     })
       .then((response) => response.ok)
       .catch(() => false)
@@ -94,8 +108,12 @@ async function request<T>(baseUrl: string, path: string, options: RequestOptions
     body,
     credentials: 'include',
     headers: isFormData
-      ? headers
-      : { 'Content-Type': 'application/json', ...(headers as Record<string, string> | undefined) },
+      ? { ...NGROK_SKIP_HEADER, ...headers }
+      : {
+          'Content-Type': 'application/json',
+          ...NGROK_SKIP_HEADER,
+          ...(headers as Record<string, string> | undefined),
+        },
   })
 
   if (response.status === 401 && !skipAuthRetry) {
