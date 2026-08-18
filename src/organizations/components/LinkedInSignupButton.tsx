@@ -21,10 +21,16 @@ function LinkedInMark() {
  * signup token, regardless of whether that LinkedIn account already has an
  * org — there's no "log me in" branch. So this only belongs on `/register`,
  * not `/login`.
+ *
+ * A full-page navigation can't set the `ngrok-skip-browser-warning` header
+ * the way `httpClient`'s `fetch()` calls do, so when the backend is behind
+ * a free-tier ngrok tunnel this would otherwise land on ngrok's "you're
+ * about to visit..." interstitial instead of the real endpoint. ngrok
+ * accepts the same flag as a query param for exactly this case.
  */
 export function LinkedInSignupButton() {
   function handleClick() {
-    window.location.href = `${AUTH_SERVICE_BASE_URL}/api/v1/organizations/linkedin`
+    window.location.href = `${AUTH_SERVICE_BASE_URL}/api/v1/organizations/linkedin?ngrok-skip-browser-warning=true`
   }
 
   return (
