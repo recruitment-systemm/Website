@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom'
 import { LandingPage } from '@/landing/pages/LandingPage'
 import { LoginPage } from '@/auth/pages/LoginPage'
+import { ForgotPasswordPage } from '@/auth/pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/auth/pages/ResetPasswordPage'
 import { RegisterOrganizationPage } from '@/organizations/pages/RegisterOrganizationPage'
 import { LinkedInSignupPage } from '@/organizations/pages/LinkedInSignupPage'
 import { OrganizationPage } from '@/organizations/pages/OrganizationPage'
@@ -26,6 +28,8 @@ export function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/jobs" element={<JobBoardPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/register" element={<RegisterOrganizationPage />} />
       <Route path="/signup/linkedin" element={<LinkedInSignupPage />} />
       <Route path="/pending-approval" element={<PendingApprovalPage />} />

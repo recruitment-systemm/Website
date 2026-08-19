@@ -1,5 +1,7 @@
 import type { LoginFormValues } from '@/auth/validation/loginSchema'
 import type { EmployeeLoginFormValues } from '@/auth/validation/employeeLoginSchema'
+import type { ForgotPasswordFormValues } from '@/auth/validation/forgotPasswordSchema'
+import type { ResetPasswordFormValues } from '@/auth/validation/resetPasswordSchema'
 import type { Organization } from '@/organizations/types/organization'
 import { ApiError, authClient } from '@/shared/api/httpClient'
 import { clearAdminSession } from '@/organizations/utils/organizationStore'
@@ -137,5 +139,73 @@ export async function logout(): Promise<void> {
   } catch {
     // Best-effort — even if the request fails, there's nothing more the
     // client can do about clearing an HttpOnly cookie itself.
+  }
+}
+
+export class OrganizationEmailNotFoundError extends Error {
+  constructor() {
+    super("We couldn't find an organization registered with that email.")
+    this.name = 'OrganizationEmailNotFoundError'
+  }
+}
+
+/**
+ * `OrganizationService.forgotPassword` throws a 404 before ever generating
+ * a token or calling the email service when no organization matches, and a
+ * 403 when the organization exists but isn't `ACCEPTED` yet — no email is
+ * sent in either case. Surface both as distinct errors so the form can
+ * tell the user outright, instead of pretending an email went out that
+ * never did.
+ */
+export async function forgotPassword(values: ForgotPasswordFormValues): Promise<void> {
+  try {
+    await authClient.post<void>('/api/v1/organizations/forgot-password', {
+      email: values.email,
+    })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      throw new OrganizationEmailNotFoundError()
+    }
+    if (error instanceof ApiError && error.status === 403) {
+      throw new OrganizationNotAcceptedError(error.message)
+    }
+    throw error
+  }
+}
+
+export class InvalidResetTokenError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InvalidResetTokenError'
+  }
+}
+
+/**
+ * Pre-validates a reset token (e.g. as soon as `/reset-password?token=...`
+ * loads) so the form can show "this link is invalid or expired" up front
+ * instead of only after the user fills in a new password.
+ */
+export async function verifyResetPasswordToken(token: string): Promise<void> {
+  try {
+    await authClient.post<void>('/api/v1/organizations/reset-password/verify', { token })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 400) {
+      throw new InvalidResetTokenError(error.message)
+    }
+    throw error
+  }
+}
+
+export async function resetPassword(token: string, values: ResetPasswordFormValues): Promise<void> {
+  try {
+    await authClient.post<void>('/api/v1/organizations/reset-password', {
+      token,
+      newPassword: values.newPassword,
+    })
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 400) {
+      throw new InvalidResetTokenError(error.message)
+    }
+    throw error
   }
 }

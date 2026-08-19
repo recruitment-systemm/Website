@@ -74,7 +74,18 @@ function OrganizationLoginForm() {
         />
       </FormField>
 
-      <FormField label="Password" htmlFor="password" error={errors.password?.message}>
+      <FormField
+        label={
+          <span className="flex items-center justify-between">
+            Password
+            <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </span>
+        }
+        htmlFor="password"
+        error={errors.password?.message}
+      >
         <Input
           id="password"
           type="password"

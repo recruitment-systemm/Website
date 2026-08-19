@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Label } from '@/components/ui/label'
 
 interface FormFieldProps {
-  label: string
+  label: ReactNode
   htmlFor: string
   error?: string
   hint?: string
