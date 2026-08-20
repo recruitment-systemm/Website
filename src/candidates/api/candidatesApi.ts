@@ -55,16 +55,14 @@ export async function listCandidates(): Promise<Candidate[]> {
   }
 }
 
-/**
- * Every candidate across every organization — for the admin console.
- *
- * BACKEND GAP: `GET /applications` is scoped to the caller's own org via
- * their employee session (same shape of gap as `listAllJobs()`), and there's
- * no admin-facing cross-org equivalent. Returns `[]` until that endpoint
- * exists rather than fabricating data.
- */
+/** Every candidate across every organization — for the admin console. */
 export async function listAllCandidates(): Promise<Candidate[]> {
-  return [];
+  try {
+    const applications = await applicationClient.get<ApplicationResponse[]>("/api/v1/applications/admin/all");
+    return applications.map(toCandidate);
+  } catch {
+    return [];
+  }
 }
 
 /**

@@ -69,7 +69,7 @@ export function AdminOrganizationDetail() {
     )
   }
 
-  const { organization, jobs, candidates } = detail
+  const { organization, jobs, candidates, employees } = detail
   const openJobs = jobs.filter((job) => job.status === 'OPEN').length
   const hires = candidates.filter((candidate) => candidate.stage === 'HIRED').length
 
@@ -138,12 +138,7 @@ export function AdminOrganizationDetail() {
         <StatCard label="Jobs" value={jobs.length} icon={Briefcase} hint={`${openJobs} open`} />
         <StatCard label="Candidates" value={candidates.length} icon={Users} hint="all stages" />
         <StatCard label="Hires" value={hires} icon={Users} accent="approved" hint="all time" />
-        <StatCard
-          label="Team members"
-          value={0}
-          icon={Users}
-          hint="no invite flow yet"
-        />
+        <StatCard label="Team members" value={employees.length} icon={Users} hint="HR + interviewers" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

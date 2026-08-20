@@ -6,9 +6,11 @@ import {
 } from '@/organizations/utils/organizationStore'
 import { listAllJobs } from '@/jobs/api/jobsApi'
 import { listAllCandidates } from '@/candidates/api/candidatesApi'
+import { listOrganizationEmployeesForAdmin } from '@/users/api/usersApi'
 import type { Organization, OrganizationStatus } from '@/organizations/types/organization'
 import type { Job } from '@/jobs/types/job'
 import type { Candidate } from '@/candidates/types/candidate'
+import type { OrgUser } from '@/users/types/user'
 
 export class InvalidAdminCredentialsError extends Error {
   constructor() {
@@ -71,6 +73,7 @@ export interface OrganizationDetail {
   organization: Organization
   jobs: Job[]
   candidates: Candidate[]
+  employees: OrgUser[]
 }
 
 export async function getOrganizationDetail(id: string): Promise<OrganizationDetail | null> {
@@ -84,11 +87,16 @@ export async function getOrganizationDetail(id: string): Promise<OrganizationDet
     throw error
   }
 
-  const [allJobs, allCandidates] = await Promise.all([listAllJobs(), listAllCandidates()])
+  const [allJobs, allCandidates, employees] = await Promise.all([
+    listAllJobs(),
+    listAllCandidates(),
+    listOrganizationEmployeesForAdmin(id),
+  ])
 
   return {
     organization,
     jobs: allJobs.filter((job) => job.organizationId === id),
     candidates: allCandidates.filter((candidate) => candidate.organizationId === id),
+    employees,
   }
 }

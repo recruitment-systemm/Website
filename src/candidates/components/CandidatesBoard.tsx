@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { CandidateBoardColumn } from '@/candidates/components/CandidateBoardColumn'
 import { CandidateBoardSkeleton } from '@/candidates/components/CandidateBoardSkeleton'
 import { CandidateCardContent } from '@/candidates/components/CandidateCardContent'
+import { ApiError } from '@/shared/api/httpClient'
 import { listCandidates, setCandidateStage } from '@/candidates/api/candidatesApi'
 import { useCurrentAccount } from '@/auth/context/AccountContext'
 import { LayoffReasonModal } from '@/candidates/components/LayoffReasonModal'
@@ -153,9 +154,15 @@ export function CandidatesBoard() {
 
   /** Sends the real status PATCH; reverts the optimistic move on failure. */
   function commitMove(candidateId: string, destination: BoardStage, revertTo: BoardStage) {
-    setCandidateStage(candidateId, destination).catch(() => {
+    setCandidateStage(candidateId, destination).catch((error) => {
+      // A 409 here (e.g. HIRED without every interview round completed and
+      // passed — see `ApplicationService.requireAllInterviewsPassed`) comes
+      // back with a specific, useful message; fall back to a generic one
+      // for anything else, same pattern as `ScheduleInterviewModal`.
       setMoveError(
-        `Couldn't move that candidate to ${destination.replace('_', ' ').toLowerCase()} — reverted.`
+        error instanceof ApiError && error.status === 409
+          ? error.message
+          : `Couldn't move that candidate to ${destination.replace('_', ' ').toLowerCase()} — reverted.`
       )
       revertCard(candidateId, destination, revertTo)
     })

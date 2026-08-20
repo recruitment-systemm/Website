@@ -60,6 +60,24 @@ export async function listOrganizationUsers(): Promise<OrgUser[]> {
   }
 }
 
+/** Every employee of a given organization — for the admin console. */
+export async function listOrganizationEmployeesForAdmin(organizationId: string): Promise<OrgUser[]> {
+  try {
+    const employees = await authClient.get<EmployeeResponseDto[]>(
+      `/api/v1/admin/organizations/${organizationId}/employees`
+    )
+    return employees.map((employee) => ({
+      id: employee.id,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      email: employee.email,
+      role: employee.role,
+    }))
+  } catch {
+    return []
+  }
+}
+
 /**
  * Creates an HR/Interviewer account under the caller's organization. Requires
  * an active **organization** session (not an employee session) — see
