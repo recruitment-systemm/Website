@@ -25,6 +25,12 @@ export class ApiError extends Error {
   }
 }
 
+export const SESSION_INVALIDATED_EVENT = 'hiredesk:session-invalidated'
+
+function announceSessionInvalidated() {
+  window.dispatchEvent(new Event(SESSION_INVALIDATED_EVENT))
+}
+
 /**
  * The envelope every backend response is wrapped in. `statusCode` only
  * appears on authentication-service responses — job-service and
@@ -121,6 +127,7 @@ async function request<T>(baseUrl: string, path: string, options: RequestOptions
     if (refreshed) {
       return request<T>(baseUrl, path, { ...options, skipAuthRetry: true })
     }
+    announceSessionInvalidated()
   }
 
   return parseResponse<T>(response)

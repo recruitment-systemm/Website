@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { getCurrentAccount, type CurrentAccount } from '@/auth/api/accountApi'
 import { AccountContext } from '@/auth/context/AccountContext'
+import { SESSION_INVALIDATED_EVENT } from '@/shared/api/httpClient'
 
 type AuthState =
   | { status: 'checking' }
@@ -31,6 +33,53 @@ export function RequireOrganization() {
     })
     return () => {
       cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    function handleSessionInvalidated() {
+      setState((current) => {
+        if (current.status !== 'signed-in') return current
+        toast.warning('Signed out', {
+          description: 'This account was signed in on another device, so you were signed out here.',
+        })
+        return { status: 'signed-out' }
+      })
+    }
+
+    window.addEventListener(SESSION_INVALIDATED_EVENT, handleSessionInvalidated)
+    return () => window.removeEventListener(SESSION_INVALIDATED_EVENT, handleSessionInvalidated)
+  }, [])
+
+  /**
+   * A tab left open and idle on the dashboard never makes another request on
+   * its own, so it would otherwise only notice a session replaced elsewhere
+   * (see the module doc on `SESSION_INVALIDATED_EVENT`) the next time the
+   * user happens to trigger a fetch. Re-checking on focus/visibility closes
+   * that gap for the common case: switching back to this tab after signing
+   * in somewhere else.
+   */
+  useEffect(() => {
+    function recheckSession() {
+      if (document.visibilityState !== 'visible') return
+      setState((current) => {
+        if (current.status !== 'signed-in') return current
+        getCurrentAccount().then((account) => {
+          if (account) return
+          toast.warning('Signed out', {
+            description: 'This account was signed in on another device, so you were signed out here.',
+          })
+          setState({ status: 'signed-out' })
+        })
+        return current
+      })
+    }
+
+    window.addEventListener('focus', recheckSession)
+    document.addEventListener('visibilitychange', recheckSession)
+    return () => {
+      window.removeEventListener('focus', recheckSession)
+      document.removeEventListener('visibilitychange', recheckSession)
     }
   }, [])
 
